@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import '@/styles/global.scss';
 import '@/styles/coss.css';
 import { INLINE_LOGO_JPEG } from '@/assets/logoInline';
+import { TooltipProvider } from '@/components/coss-ui/tooltip';
 import App from './App.tsx';
 
 document.title = 'CPA Manager Plus';
@@ -23,6 +24,8 @@ if (faviconEl) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <TooltipProvider>
+      <App />
+    </TooltipProvider>
   </StrictMode>
 );
