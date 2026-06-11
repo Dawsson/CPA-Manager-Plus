@@ -91,7 +91,7 @@ export function ProviderNav() {
   }, []);
 
   const getScrollContainer = useCallback((): ScrollContainer => {
-    // Mobile layout uses document scroll (layout switches at 768px); desktop uses the `.content` scroller.
+    // Mobile layout uses document scroll; desktop uses the coss shell scroller.
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     if (isMobile) return window;
     return getContentScroller() ?? window;
@@ -134,7 +134,7 @@ export function ProviderNav() {
     if (!shouldShow) return;
     const contentScroller = getContentScroller();
 
-    // Listen to both: desktop scroll happens on `.content`; mobile uses `window`.
+    // Listen to both: desktop scroll happens on the shell scroller; mobile uses `window`.
     window.addEventListener('scroll', handleScroll, { passive: true });
     contentScroller?.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll);

@@ -48,7 +48,7 @@ const scrollLockSnapshot = {
 
 const resolveContentScrollContainer = () => {
   if (typeof document === 'undefined') return null;
-  const contentEl = document.querySelector('.content');
+  const contentEl = document.querySelector('.cpa-shell-content');
   return contentEl instanceof HTMLElement ? contentEl : null;
 };
 
