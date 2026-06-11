@@ -60,14 +60,6 @@ body.modal-open .cpa-shell-content {
   }
 }
 
-// 通用工具类
-.container {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 $spacing-md;
-}
-
 .flex-center {
   @include flex-center;
 }

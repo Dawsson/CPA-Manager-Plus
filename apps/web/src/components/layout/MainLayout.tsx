@@ -17,7 +17,9 @@ import { Separator } from '@/components/coss-ui/separator';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
+  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
@@ -743,21 +745,21 @@ function CpaSidebar({
   };
 
   return (
-    <Sidebar className="cpa-coss-sidebar" collapsible="icon" variant="inset">
+    <Sidebar className="cpa-coss-sidebar" collapsible="offcanvas" variant="inset">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              className="relative h-12 rounded-lg border border-transparent px-2 data-[active=true]:bg-sidebar-accent group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:overflow-visible group-data-[collapsible=icon]:rounded-lg group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:shadow-none group-data-[collapsible=icon]:hover:bg-transparent"
+              className="data-[slot=sidebar-menu-button]:p-1.5!"
               size="lg"
               tooltip={fullBrandName}
             >
-              <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-sidebar-border bg-sidebar-accent text-sidebar-foreground/55">
+              <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                 <img alt="" className="size-full object-cover" src={INLINE_LOGO_JPEG} />
               </span>
-              <span className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-medium">{abbrBrandName}</span>
-                <span className="truncate text-xs text-sidebar-foreground/70">{fullBrandName}</span>
+              <span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold text-base">{abbrBrandName}</span>
+                <span className="truncate text-muted-foreground text-xs">{fullBrandName}</span>
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -768,33 +770,51 @@ function CpaSidebar({
         {navSections.map((section) => (
           <SidebarGroup key={section.label}>
             <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
-            <SidebarMenu>
-              {section.items.map((item) => {
-                const isActive = matchesNavPath(item, currentPath);
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.items.map((item) => {
+                  const isActive = matchesNavPath(item, currentPath);
 
-                return (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      render={
-                        <NavLink
-                          end={item.path === '/' || item.exact}
-                          onClick={handleNavigate}
-                          to={item.path}
-                        />
-                      }
-                      tooltip={item.label}
-                    >
-                      {item.icon}
-                      <span>{item.shortLabel ?? item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        render={
+                          <NavLink
+                            end={item.path === '/' || item.exact}
+                            onClick={handleNavigate}
+                            to={item.path}
+                          />
+                        }
+                        tooltip={item.label}
+                      >
+                        {item.icon}
+                        <span>{item.shortLabel ?? item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
           </SidebarGroup>
         ))}
       </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleNavigate} tooltip={fullBrandName}>
+              <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-sidebar-border bg-sidebar-accent">
+                <img alt="" className="size-full object-cover" src={INLINE_LOGO_JPEG} />
+              </span>
+              <span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{abbrBrandName}</span>
+                <span className="truncate text-muted-foreground text-xs">{fullBrandName}</span>
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>
