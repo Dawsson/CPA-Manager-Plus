@@ -10,9 +10,9 @@ import {
 } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/Button';
 import { PageTransition } from '@/components/common/PageTransition';
 import { MainRoutes } from '@/router/MainRoutes';
+import { Button } from '@/components/coss-ui/button';
 import { Separator } from '@/components/coss-ui/separator';
 import {
   Sidebar,
@@ -396,58 +396,58 @@ export function MainLayout() {
     {
       label: t('nav.dashboard'),
       items: [
-      {
-        path: '/',
-        label: t('nav.dashboard'),
-        shortLabel: navShortLabel('nav.dashboard', t('nav.dashboard')),
-        icon: sidebarIcons.dashboard,
-      },
+        {
+          path: '/',
+          label: t('nav.dashboard'),
+          shortLabel: navShortLabel('nav.dashboard', t('nav.dashboard')),
+          icon: sidebarIcons.dashboard,
+        },
       ],
     },
     {
       label: t('nav.config_management'),
       items: [
-      {
-        path: '/config',
-        label: t('nav.config_management'),
-        shortLabel: navShortLabel('nav.config_management', t('nav.config_management')),
-        icon: sidebarIcons.config,
-      },
-      {
-        path: '/ai-providers',
-        label: t('nav.ai_providers'),
-        shortLabel: navShortLabel('nav.ai_providers', t('nav.ai_providers')),
-        icon: sidebarIcons.aiProviders,
-      },
+        {
+          path: '/config',
+          label: t('nav.config_management'),
+          shortLabel: navShortLabel('nav.config_management', t('nav.config_management')),
+          icon: sidebarIcons.config,
+        },
+        {
+          path: '/ai-providers',
+          label: t('nav.ai_providers'),
+          shortLabel: navShortLabel('nav.ai_providers', t('nav.ai_providers')),
+          icon: sidebarIcons.aiProviders,
+        },
       ],
     },
     {
       label: t('nav.auth_files'),
       items: [
-      {
-        path: '/auth-files',
-        label: t('nav.auth_files'),
-        shortLabel: navShortLabel('nav.auth_files', t('nav.auth_files')),
-        icon: sidebarIcons.authFiles,
-      },
-      {
-        path: '/oauth',
-        label: t('nav.oauth', { defaultValue: 'OAuth' }),
-        shortLabel: navShortLabel('nav.oauth', t('nav.oauth', { defaultValue: 'OAuth' })),
-        icon: sidebarIcons.oauth,
-      },
-      {
-        path: '/quota',
-        label: t('nav.quota_management'),
-        shortLabel: navShortLabel('nav.quota_management', t('nav.quota_management')),
-        icon: sidebarIcons.quota,
-      },
-      {
-        path: '/codex-inspection',
-        label: t('nav.codex_inspection'),
-        shortLabel: navShortLabel('nav.codex_inspection', t('nav.codex_inspection')),
-        icon: sidebarIcons.codexInspection,
-      },
+        {
+          path: '/auth-files',
+          label: t('nav.auth_files'),
+          shortLabel: navShortLabel('nav.auth_files', t('nav.auth_files')),
+          icon: sidebarIcons.authFiles,
+        },
+        {
+          path: '/oauth',
+          label: t('nav.oauth', { defaultValue: 'OAuth' }),
+          shortLabel: navShortLabel('nav.oauth', t('nav.oauth', { defaultValue: 'OAuth' })),
+          icon: sidebarIcons.oauth,
+        },
+        {
+          path: '/quota',
+          label: t('nav.quota_management'),
+          shortLabel: navShortLabel('nav.quota_management', t('nav.quota_management')),
+          icon: sidebarIcons.quota,
+        },
+        {
+          path: '/codex-inspection',
+          label: t('nav.codex_inspection'),
+          shortLabel: navShortLabel('nav.codex_inspection', t('nav.codex_inspection')),
+          icon: sidebarIcons.codexInspection,
+        },
       ],
     },
     {
@@ -457,12 +457,12 @@ export function MainLayout() {
     {
       label: t('nav.system_info'),
       items: [
-      {
-        path: '/system',
-        label: t('nav.system_info'),
-        shortLabel: navShortLabel('nav.system_info', t('nav.system_info')),
-        icon: sidebarIcons.system,
-      },
+        {
+          path: '/system',
+          label: t('nav.system_info'),
+          shortLabel: navShortLabel('nav.system_info', t('nav.system_info')),
+          icon: sidebarIcons.system,
+        },
       ],
     },
   ].filter((section) => section.items.length > 0);
@@ -596,7 +596,7 @@ export function MainLayout() {
           <div className="navbar-right h-full px-3 lg:px-4">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handleRefreshAll}
               title={t('header.refresh_all')}
               aria-label={t('header.refresh_all')}
@@ -610,7 +610,7 @@ export function MainLayout() {
             >
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={toggleLanguageMenu}
                 title={t('language.switch')}
                 aria-label={t('language.switch')}
@@ -644,7 +644,7 @@ export function MainLayout() {
             <div className={`theme-menu ${themeMenuOpen ? 'open' : ''}`} ref={themeMenuRef}>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={toggleThemeMenu}
                 title={t('theme.switch')}
                 aria-label={t('theme.switch')}
@@ -683,7 +683,7 @@ export function MainLayout() {
 
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={logout}
               title={t('header.logout')}
               aria-label={t('header.logout')}

@@ -421,7 +421,7 @@ export function VisualConfigEditor({
 
     /* ---- Cache header height – recomputed only on resize ---- */
     const computeHeaderHeight = () => {
-      const header = document.querySelector('.main-header') as HTMLElement | null;
+      const header = document.querySelector('.cpa-shell-header') as HTMLElement | null;
       if (header) return header.getBoundingClientRect().height;
 
       const raw = getComputedStyle(document.documentElement).getPropertyValue('--header-height');
@@ -431,7 +431,7 @@ export function VisualConfigEditor({
     let headerHeight = computeHeaderHeight();
 
     /* ---- Cache content scroller – resolved once ---- */
-    const contentScroller = document.querySelector('.content') as HTMLElement | null;
+    const contentScroller = document.querySelector('.cpa-shell-content') as HTMLElement | null;
 
     /* ---- Cache floating height from previous frame ---- */
     let cachedFloatingHeight = floatingElement.getBoundingClientRect().height || 200;
@@ -454,7 +454,8 @@ export function VisualConfigEditor({
         220
       );
       const maxHeight = Math.max(window.innerHeight - top - viewportPadding, 160);
-      const isVisible = workspaceRect.bottom > stickyTop + 24 && anchorRect.top < window.innerHeight;
+      const isVisible =
+        workspaceRect.bottom > stickyTop + 24 && anchorRect.top < window.innerHeight;
 
       floatingElement.style.transform = `translate3d(${left}px, ${top}px, 0)`;
       floatingElement.style.width = `${width}px`;
@@ -822,9 +823,7 @@ export function VisualConfigEditor({
                   max="3600"
                   placeholder="60"
                   value={values.redisUsageQueueRetentionSeconds}
-                  onChange={(e) =>
-                    onChange({ redisUsageQueueRetentionSeconds: e.target.value })
-                  }
+                  onChange={(e) => onChange({ redisUsageQueueRetentionSeconds: e.target.value })}
                   disabled={disabled}
                   hint={t(
                     'config_management.visual.sections.system.redis_usage_queue_retention_hint'
@@ -1041,17 +1040,13 @@ export function VisualConfigEditor({
                       <Input
                         label={t('config_management.visual.sections.headers.package_version')}
                         value={values.claudeHeaderPackageVersion}
-                        onChange={(e) =>
-                          onChange({ claudeHeaderPackageVersion: e.target.value })
-                        }
+                        onChange={(e) => onChange({ claudeHeaderPackageVersion: e.target.value })}
                         disabled={disabled}
                       />
                       <Input
                         label={t('config_management.visual.sections.headers.runtime_version')}
                         value={values.claudeHeaderRuntimeVersion}
-                        onChange={(e) =>
-                          onChange({ claudeHeaderRuntimeVersion: e.target.value })
-                        }
+                        onChange={(e) => onChange({ claudeHeaderRuntimeVersion: e.target.value })}
                         disabled={disabled}
                       />
                       <Input
@@ -1144,9 +1139,7 @@ export function VisualConfigEditor({
               />
               <ToggleRow
                 title={t('config_management.visual.sections.quota.antigravity_credits')}
-                description={t(
-                  'config_management.visual.sections.quota.antigravity_credits_desc'
-                )}
+                description={t('config_management.visual.sections.quota.antigravity_credits_desc')}
                 checked={values.quotaAntigravityCredits}
                 disabled={disabled}
                 onChange={(quotaAntigravityCredits) => onChange({ quotaAntigravityCredits })}

@@ -26,7 +26,11 @@ const PROVIDERS: ProviderNavItem[] = [
   { id: 'claude', label: 'Claude', getIcon: () => iconClaude },
   { id: 'vertex', label: 'Vertex', getIcon: () => iconVertex },
   { id: 'ampcode', label: 'Ampcode', getIcon: () => iconAmp },
-  { id: 'openai', label: 'OpenAI', getIcon: (theme) => (theme === 'dark' ? iconOpenaiDark : iconOpenaiLight) },
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    getIcon: (theme) => (theme === 'dark' ? iconOpenaiDark : iconOpenaiLight),
+  },
 ];
 
 const HEADER_OFFSET = 24;
@@ -68,7 +72,7 @@ export function ProviderNav() {
   const shouldShow = isCurrentLayer && normalizedPathname === '/ai-providers';
 
   const getHeaderHeight = useCallback(() => {
-    const header = document.querySelector('.main-header') as HTMLElement | null;
+    const header = document.querySelector('.cpa-shell-header') as HTMLElement | null;
     if (header) return header.getBoundingClientRect().height;
 
     const raw = getComputedStyle(document.documentElement).getPropertyValue('--header-height');
@@ -81,7 +85,7 @@ export function ProviderNav() {
       return contentScrollerRef.current;
     }
 
-    const container = document.querySelector('.content') as HTMLElement | null;
+    const container = document.querySelector('.cpa-shell-content') as HTMLElement | null;
     contentScrollerRef.current = container;
     return container;
   }, []);
