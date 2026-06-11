@@ -1,4 +1,5 @@
 import {
+  CSSProperties,
   ReactNode,
   SVGProps,
   useCallback,
@@ -12,6 +13,22 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { PageTransition } from '@/components/common/PageTransition';
 import { MainRoutes } from '@/router/MainRoutes';
+import { Separator } from '@/components/coss-ui/separator';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarTrigger,
+  useSidebar,
+} from '@/components/coss-ui/sidebar';
 import {
   IconSidebarAuthFiles,
   IconSidebarConfig,
@@ -35,9 +52,10 @@ import {
 import { triggerHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { usePanelFeatureAvailability } from '@/hooks/usePanelFeatureAvailability';
 import { isFileLogsAvailable } from '@/features/logs/logFeatureAvailability';
-import { LANGUAGE_LABEL_KEYS, LANGUAGE_ORDER, STORAGE_KEY_SIDEBAR } from '@/utils/constants';
+import { LANGUAGE_LABEL_KEYS, LANGUAGE_ORDER } from '@/utils/constants';
 import { isSupportedLanguage } from '@/utils/language';
 import type { Theme } from '@/types';
+import { cn } from '@/lib/utils';
 
 const SIDEBAR_ICON_SIZE = 20;
 
@@ -165,6 +183,11 @@ type NavItem = {
   exact?: boolean;
 };
 
+type NavSection = {
+  label: string;
+  items: NavItem[];
+};
+
 export function MainLayout() {
   const { t } = useTranslation();
   const { showNotification } = useNotificationStore();
@@ -182,14 +205,6 @@ export function MainLayout() {
   const language = useLanguageStore((state) => state.language);
   const setLanguage = useLanguageStore((state) => state.setLanguage);
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY_SIDEBAR) === 'true';
-    } catch {
-      return false;
-    }
-  });
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -200,7 +215,6 @@ export function MainLayout() {
   const fullBrandName = 'CPA Manager Plus';
   const abbrBrandName = t('title.abbr');
   const isLogsPage = location.pathname.startsWith('/logs');
-  const showSidebarLabels = !sidebarCollapsed || sidebarOpen;
 
   // 将顶部悬浮控制区高度写入 CSS 变量，供移动端粘性元素和浮层避让。
   useLayoutEffect(() => {
@@ -378,16 +392,21 @@ export function MainLayout() {
         ]
       : []),
   ];
-  const navSections: NavItem[][] = [
-    [
+  const navSections: NavSection[] = [
+    {
+      label: t('nav.dashboard'),
+      items: [
       {
         path: '/',
         label: t('nav.dashboard'),
         shortLabel: navShortLabel('nav.dashboard', t('nav.dashboard')),
         icon: sidebarIcons.dashboard,
       },
-    ],
-    [
+      ],
+    },
+    {
+      label: t('nav.config_management'),
+      items: [
       {
         path: '/config',
         label: t('nav.config_management'),
@@ -400,8 +419,11 @@ export function MainLayout() {
         shortLabel: navShortLabel('nav.ai_providers', t('nav.ai_providers')),
         icon: sidebarIcons.aiProviders,
       },
-    ],
-    [
+      ],
+    },
+    {
+      label: t('nav.auth_files'),
+      items: [
       {
         path: '/auth-files',
         label: t('nav.auth_files'),
@@ -426,18 +448,25 @@ export function MainLayout() {
         shortLabel: navShortLabel('nav.codex_inspection', t('nav.codex_inspection')),
         icon: sidebarIcons.codexInspection,
       },
-    ],
-    operationNavItems,
-    [
+      ],
+    },
+    {
+      label: t('nav.monitoring_center', { defaultValue: 'Operations' }),
+      items: operationNavItems,
+    },
+    {
+      label: t('nav.system_info'),
+      items: [
       {
         path: '/system',
         label: t('nav.system_info'),
         shortLabel: navShortLabel('nav.system_info', t('nav.system_info')),
         icon: sidebarIcons.system,
       },
-    ],
-  ].filter((section) => section.length > 0);
-  const navItems = navSections.flat();
+      ],
+    },
+  ].filter((section) => section.items.length > 0);
+  const navItems = navSections.flatMap((section) => section.items);
   const navOrder = navItems.map((item) => item.path);
   const getRouteOrder = (pathname: string) => {
     const trimmedPath =
@@ -513,9 +542,6 @@ export function MainLayout() {
     }
     showNotification(t('notification.data_refreshed'), 'success');
   };
-  const mobileSidebarToggleLabel = sidebarOpen
-    ? t('sidebar.toggle_collapse', { defaultValue: 'Close navigation' })
-    : t('sidebar.toggle_expand', { defaultValue: 'Open navigation' });
   const normalizedLocationPath =
     location.pathname.length > 1 && location.pathname.endsWith('/')
       ? location.pathname.slice(0, -1)
@@ -532,47 +558,42 @@ export function MainLayout() {
   const currentRouteLabel = activeNavItem?.label ?? fullBrandName;
 
   return (
-    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
-      <header className="main-header" ref={headerRef}>
-        <div className="navbar">
-          <div className="navbar-left">
-            <button
-              type="button"
-              className="hamburger-container"
-              onClick={() => {
-                if (window.matchMedia('(max-width: 768px)').matches) {
-                  setSidebarOpen((prev) => !prev);
-                  return;
-                }
-                setSidebarCollapsed((prev) => {
-                  const next = !prev;
-                  try {
-                    localStorage.setItem(STORAGE_KEY_SIDEBAR, String(next));
-                  } catch {
-                    /* ignore storage failures */
-                  }
-                  return next;
-                });
-              }}
-              title={mobileSidebarToggleLabel}
-              aria-label={mobileSidebarToggleLabel}
-            >
-              {sidebarOpen
-                ? headerIcons.close
-                : sidebarCollapsed
-                  ? headerIcons.sidebarExpand
-                  : headerIcons.sidebarCollapse}
-            </button>
+    <SidebarProvider
+      className="cpa-shell h-svh min-h-0 overflow-hidden bg-sidebar text-sidebar-foreground [&_[data-slot=sidebar-container]]:transition-none [&_[data-slot=sidebar-gap]]:transition-none"
+      style={
+        {
+          '--header-height': '50px',
+          '--sidebar-width': 'calc(var(--spacing) * 64)',
+        } as CSSProperties
+      }
+    >
+      <CpaSidebar
+        abbrBrandName={abbrBrandName}
+        currentPath={currentPath}
+        fullBrandName={fullBrandName}
+        matchesNavPath={matchesNavPath}
+        navSections={navSections}
+      />
 
+      <SidebarInset className="min-h-0 overflow-hidden bg-background">
+        <header
+          className="cpa-shell-header flex h-(--header-height) min-h-(--header-height) shrink-0 items-center justify-between gap-2 border-border/70 border-b bg-background"
+          ref={headerRef}
+        >
+          <div className="flex min-w-0 items-center gap-2 px-3 lg:px-4">
+            <SidebarTrigger className="-ml-1 size-8 shrink-0" />
+            <Separator className="mr-1.5 h-4 bg-border/70" orientation="vertical" />
             <nav
-              className="app-breadcrumb"
+              className="flex min-w-0 items-center text-muted-foreground text-sm"
               aria-label={t('common.navigation', { defaultValue: 'Navigation' })}
             >
-              <span className="breadcrumb-item">{currentRouteLabel}</span>
+              <span className="min-w-0 truncate font-medium text-foreground">
+                {currentRouteLabel}
+              </span>
             </nav>
           </div>
 
-          <div className="navbar-right">
+          <div className="navbar-right h-full px-3 lg:px-4">
             <Button
               variant="ghost"
               size="sm"
@@ -670,62 +691,23 @@ export function MainLayout() {
               {headerIcons.logout}
             </Button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="main-body">
-        <button
-          type="button"
-          className={`sidebar-backdrop ${sidebarOpen ? 'visible' : ''}`}
-          onClick={() => setSidebarOpen(false)}
-          aria-label={t('common.close')}
-          aria-hidden={!sidebarOpen}
-          tabIndex={sidebarOpen ? 0 : -1}
-        />
-
-        <aside
-          className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}
+        <div
+          className={cn(
+            'cpa-shell-content',
+            'h-[calc(100svh-var(--header-height))] min-h-0 overflow-y-auto bg-background',
+            isLogsPage && 'overflow-hidden'
+          )}
+          ref={contentRef}
         >
-          <div className="sidebar-brand" title={fullBrandName}>
-            <div className="sidebar-brand-main">
-              <img src={INLINE_LOGO_JPEG} alt="CPAMC logo" className="sidebar-brand-logo" />
-              {showSidebarLabels && <span className="sidebar-brand-title">{abbrBrandName}</span>}
-            </div>
-            {!showSidebarLabels && (
-              <span className="sidebar-brand-short">{abbrBrandName.charAt(0) || 'C'}</span>
+          <main
+            className={cn(
+              'cpa-shell-main',
+              'flex min-h-full min-w-0 flex-col gap-(--app-gap) overflow-x-hidden bg-transparent p-(--app-gap)',
+              isLogsPage && 'h-full min-h-0 overflow-hidden'
             )}
-          </div>
-
-          <div className="nav-section">
-            {navSections.map((section, sectionIndex) => (
-              <div className="nav-menu-section" key={`nav-section-${sectionIndex}`}>
-                {sectionIndex > 0 && <div className="nav-menu-divider" aria-hidden="true" />}
-                {section.map((item) => (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    end={item.path === '/' || item.exact}
-                    className={({ isActive }) =>
-                      `nav-item ${
-                        isActive || matchesNavPath(item, currentPath) ? 'active' : ''
-                      }`
-                    }
-                    onClick={() => setSidebarOpen(false)}
-                    title={item.label}
-                  >
-                    <span className="nav-icon">{item.icon}</span>
-                    {showSidebarLabels && (
-                      <span className="nav-label">{item.shortLabel ?? item.label}</span>
-                    )}
-                  </NavLink>
-                ))}
-              </div>
-            ))}
-          </div>
-        </aside>
-
-        <div className={`content${isLogsPage ? ' content-logs' : ''}`} ref={contentRef}>
-          <main className={`main-content${isLogsPage ? ' main-content-logs' : ''}`}>
+          >
             <PageTransition
               render={(location) => <MainRoutes location={location} />}
               getRouteOrder={getRouteOrder}
@@ -734,7 +716,87 @@ export function MainLayout() {
             />
           </main>
         </div>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
+
+function CpaSidebar({
+  abbrBrandName,
+  currentPath,
+  fullBrandName,
+  matchesNavPath,
+  navSections,
+}: {
+  abbrBrandName: string;
+  currentPath: string;
+  fullBrandName: string;
+  matchesNavPath: (item: NavItem, pathname: string) => boolean;
+  navSections: NavSection[];
+}) {
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleNavigate = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
+  return (
+    <Sidebar className="cpa-coss-sidebar" collapsible="icon" variant="inset">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              className="relative h-12 rounded-lg border border-transparent px-2 data-[active=true]:bg-sidebar-accent group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:overflow-visible group-data-[collapsible=icon]:rounded-lg group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:shadow-none group-data-[collapsible=icon]:hover:bg-transparent"
+              size="lg"
+              tooltip={fullBrandName}
+            >
+              <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-sidebar-border bg-sidebar-accent text-sidebar-foreground/55">
+                <img alt="" className="size-full object-cover" src={INLINE_LOGO_JPEG} />
+              </span>
+              <span className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate font-medium">{abbrBrandName}</span>
+                <span className="truncate text-xs text-sidebar-foreground/70">{fullBrandName}</span>
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>
+        {navSections.map((section) => (
+          <SidebarGroup key={section.label}>
+            <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+            <SidebarMenu>
+              {section.items.map((item) => {
+                const isActive = matchesNavPath(item, currentPath);
+
+                return (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      render={
+                        <NavLink
+                          end={item.path === '/' || item.exact}
+                          onClick={handleNavigate}
+                          to={item.path}
+                        />
+                      }
+                      tooltip={item.label}
+                    >
+                      {item.icon}
+                      <span>{item.shortLabel ?? item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+
+      <SidebarRail />
+    </Sidebar>
   );
 }

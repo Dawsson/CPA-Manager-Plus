@@ -49,6 +49,8 @@ const resolveTheme = (theme: Theme): AppliedTheme => {
 };
 
 const applyTheme = (resolved: AppliedTheme) => {
+  document.documentElement.classList.toggle('dark', resolved === 'dark');
+
   if (resolved === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
     return;
