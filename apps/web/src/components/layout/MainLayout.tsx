@@ -58,12 +58,6 @@ import { LANGUAGE_LABEL_KEYS, LANGUAGE_ORDER } from '@/utils/constants';
 import { isSupportedLanguage } from '@/utils/language';
 import type { Theme } from '@/types';
 import { cn } from '@/lib/utils';
-import { AppSidebar } from '@/components/layout/app-sidebar';
-import { NavMain } from '@/components/layout/nav-main';
-import { NavDocuments } from '@/components/layout/nav-documents';
-import { NavSecondary } from '@/components/layout/nav-secondary';
-import { NavUser } from '@/components/layout/nav-user';
-import { SiteHeader } from '@/components/layout/site-header';
 
 const SIDEBAR_ICON_SIZE = 20;
 
@@ -80,6 +74,7 @@ const sidebarIcons: Record<string, ReactNode> = {
   system: <IconSidebarSystem size={SIDEBAR_ICON_SIZE} />,
 };
 
+// Header action icons - smaller size for header buttons
 const headerIconProps: SVGProps<SVGSVGElement> = {
   width: 16,
   height: 16,
@@ -98,6 +93,33 @@ const headerIcons = {
     <svg {...headerIconProps}>
       <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
       <path d="M21 3v5h-5" />
+    </svg>
+  ),
+  menu: (
+    <svg {...headerIconProps}>
+      <path d="M4 7h16" />
+      <path d="M4 12h16" />
+      <path d="M4 17h16" />
+    </svg>
+  ),
+  close: (
+    <svg {...headerIconProps}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  ),
+  sidebarCollapse: (
+    <svg {...headerIconProps}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M9 4v16" />
+      <path d="m16 9-3 3 3 3" />
+    </svg>
+  ),
+  sidebarExpand: (
+    <svg {...headerIconProps}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M9 4v16" />
+      <path d="m13 9 3 3-3 3" />
     </svg>
   ),
   language: (
@@ -145,7 +167,11 @@ const headerIcons = {
   ),
 };
 
-const THEME_OPTIONS: Array<{ key: Theme; labelKey: string; icon: ReactNode }> = [
+const THEME_OPTIONS: Array<{
+  key: Theme;
+  labelKey: string;
+  icon: ReactNode;
+}> = [
   { key: 'auto', labelKey: 'theme.auto', icon: headerIcons.autoTheme },
   { key: 'white', labelKey: 'theme.white', icon: headerIcons.sun },
   { key: 'dark', labelKey: 'theme.dark', icon: headerIcons.moon },
@@ -168,30 +194,67 @@ export function MainLayout() {
   const { t } = useTranslation();
   const { showNotification } = useNotificationStore();
   const location = useLocation();
+
   const logout = useAuthStore((state) => state.logout);
+
   const config = useConfigStore((state) => state.config);
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
   const clearCache = useConfigStore((state) => state.clearCache);
   const featureAvailability = usePanelFeatureAvailability();
+
   const theme = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
   const language = useLanguageStore((state) => state.language);
   const setLanguage = useLanguageStore((state) => state.setLanguage);
+
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const languageMenuRef = useRef<HTMLDivElement | null>(null);
+  const themeMenuRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
 
   const fullBrandName = 'CPA Manager Plus';
   const abbrBrandName = t('title.abbr');
   const isLogsPage = location.pathname.startsWith('/logs');
 
+  // 将顶部悬浮控制区高度写入 CSS 变量，供移动端粘性元素和浮层避让。
+  useLayoutEffect(() => {
+    const updateHeaderHeight = () => {
+      const height = headerRef.current?.offsetHeight;
+      if (height) {
+        document.documentElement.style.setProperty('--header-height', `${height}px`);
+      }
+    };
+
+    updateHeaderHeight();
+
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' && headerRef.current
+        ? new ResizeObserver(updateHeaderHeight)
+        : null;
+    if (resizeObserver && headerRef.current) {
+      resizeObserver.observe(headerRef.current);
+    }
+
+    window.addEventListener('resize', updateHeaderHeight);
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      window.removeEventListener('resize', updateHeaderHeight);
+    };
+  }, []);
+
+  // 将主内容区的中心点写入 CSS 变量，供底部浮层（配置面板操作栏、提供商导航）对齐到内容区
   useLayoutEffect(() => {
     const updateContentCenter = () => {
       const el = contentRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      document.documentElement.style.setProperty(
-        '--content-center-x',
-        `${rect.left + rect.width / 2}px`
-      );
+      const centerX = rect.left + rect.width / 2;
+      document.documentElement.style.setProperty('--content-center-x', `${centerX}px`);
     };
 
     updateContentCenter();
@@ -208,15 +271,98 @@ export function MainLayout() {
     window.addEventListener('resize', updateContentCenter);
 
     return () => {
-      resizeObserver?.disconnect();
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       window.removeEventListener('resize', updateContentCenter);
       document.documentElement.style.removeProperty('--content-center-x');
     };
   }, []);
 
   useEffect(() => {
+    if (!languageMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!languageMenuRef.current?.contains(event.target as Node)) {
+        setLanguageMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setLanguageMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [languageMenuOpen]);
+
+  useEffect(() => {
+    if (!themeMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!themeMenuRef.current?.contains(event.target as Node)) {
+        setThemeMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setThemeMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [themeMenuOpen]);
+
+  const toggleLanguageMenu = useCallback(() => {
+    setLanguageMenuOpen((prev) => !prev);
+    setThemeMenuOpen(false);
+  }, []);
+
+  const toggleThemeMenu = useCallback(() => {
+    setThemeMenuOpen((prev) => !prev);
+    setLanguageMenuOpen(false);
+  }, []);
+
+  const handleThemeSelect = useCallback(
+    (nextTheme: Theme) => {
+      setTheme(nextTheme);
+      setThemeMenuOpen(false);
+    },
+    [setTheme]
+  );
+
+  const handleLanguageSelect = useCallback(
+    (nextLanguage: string) => {
+      if (!isSupportedLanguage(nextLanguage)) {
+        return;
+      }
+      setLanguage(nextLanguage);
+      setLanguageMenuOpen(false);
+    },
+    [setLanguage]
+  );
+
+  useEffect(() => {
     fetchConfig().catch(() => {
-      // Initial failures are surfaced by the login/config flows.
+      // ignore initial failure; login flow会提示
     });
   }, [fetchConfig]);
 
@@ -226,30 +372,28 @@ export function MainLayout() {
     const label = t(shortKey, { defaultValue: fallback });
     return label === shortKey ? fallback : label;
   };
-
   const operationNavItems: NavItem[] = [
     ...(featureAvailability.requestMonitoringAvailable
       ? [
-        {
-          path: '/monitoring',
-          label: t('nav.monitoring_center'),
-          shortLabel: navShortLabel('nav.monitoring_center', t('nav.monitoring_center')),
-          icon: sidebarIcons.monitoring,
-        },
-      ]
+          {
+            path: '/monitoring',
+            label: t('nav.monitoring_center'),
+            shortLabel: navShortLabel('nav.monitoring_center', t('nav.monitoring_center')),
+            icon: sidebarIcons.monitoring,
+          },
+        ]
       : []),
     ...(fileLogsAvailable
       ? [
-        {
-          path: '/logs',
-          label: t('nav.logs'),
-          shortLabel: navShortLabel('nav.logs', t('nav.logs')),
-          icon: sidebarIcons.logs,
-        },
-      ]
+          {
+            path: '/logs',
+            label: t('nav.logs'),
+            shortLabel: navShortLabel('nav.logs', t('nav.logs')),
+            icon: sidebarIcons.logs,
+          },
+        ]
       : []),
   ];
-
   const navSections: NavSection[] = [
     {
       label: t('nav.dashboard'),
@@ -259,7 +403,6 @@ export function MainLayout() {
           label: t('nav.dashboard'),
           shortLabel: navShortLabel('nav.dashboard', t('nav.dashboard')),
           icon: sidebarIcons.dashboard,
-          exact: true,
         },
       ],
     },
@@ -325,7 +468,6 @@ export function MainLayout() {
       ],
     },
   ].filter((section) => section.items.length > 0);
-
   const navItems = navSections.flatMap((section) => section.items);
   const navOrder = navItems.map((item) => item.path);
   const getRouteOrder = (pathname: string) => {
@@ -402,7 +544,6 @@ export function MainLayout() {
     }
     showNotification(t('notification.data_refreshed'), 'success');
   };
-
   const normalizedLocationPath =
     location.pathname.length > 1 && location.pathname.endsWith('/')
       ? location.pathname.slice(0, -1)
@@ -419,86 +560,263 @@ export function MainLayout() {
   const currentRouteLabel = activeNavItem?.label ?? fullBrandName;
 
   return (
-    // <SidebarProvider
-    //   className="h-svh min-h-0 overflow-hidden bg-sidebar text-sidebar-foreground [&_[data-slot=sidebar-container]]:transition-none [&_[data-slot=sidebar-gap]]:transition-none"
-    //   style={
-    //     {
-    //       '--sidebar-width': 'calc(var(--spacing) * 72)',
-    //       '--header-height': 'calc(var(--spacing) * 11)',
-    //     } as CSSProperties
-    //   }
-    // >
-    //   <AppSidebar
-    //     abbrBrandName={abbrBrandName}
-    //     currentPath={currentPath}
-    //     fullBrandName={fullBrandName}
-    //     matchesNavPath={matchesNavPath}
-    //     navSections={navSections}
-    //     variant="inset"
-    //   />
-    // <SidebarInset className="min-h-0 overflow-hidden bg-white">
-    // <SidebarProvider
-    //   style={
-    //     {
-    //       "--sidebar-width": "calc(var(--spacing) * 72)",
-    //       "--header-height": "calc(var(--spacing) * 12)",
-    //     } as React.CSSProperties
-    //   }
-    // >
-    //   <AppSidebar variant="inset" />
-    //   <SidebarInset>
-    //     <SiteHeader
-    //       currentRouteLabel={currentRouteLabel}
-    //       language={language}
-    //       logout={logout}
-    //       onLanguageSelect={setLanguage}
-    //       onRefreshAll={handleRefreshAll}
-    //       onThemeSelect={setTheme}
-    //       theme={theme}
-    //     />
-    //     <div
-    //       className={cn(
-    //         'cpa-shell-content h-[calc(100svh-var(--header-height))] min-h-0 overflow-y-auto bg-white',
-    //         isLogsPage && 'overflow-hidden'
-    //       )}
-    //       ref={contentRef}
-    //     >
-    //       <div className="@container/main flex min-h-full flex-col">
-    //         <main
-    //           className={cn(
-    //             'cpa-shell-main flex min-h-full min-w-0 flex-col gap-(--app-gap) overflow-x-hidden bg-transparent p-(--app-gap)',
-    //             isLogsPage && 'h-full min-h-0 overflow-hidden'
-    //           )}
-    //         >
-    //           <PageTransition
-    //             render={(location) => <MainRoutes location={location} />}
-    //             getRouteOrder={getRouteOrder}
-    //             getTransitionVariant={getTransitionVariant}
-    //             scrollContainerRef={contentRef}
-    //           />
-    //         </main>
-    //       </div>
-    //     </div>
-    //   </SidebarInset>
-    // </SidebarProvider>
     <SidebarProvider
+      className="cpa-shell h-svh min-h-0 overflow-hidden bg-sidebar text-sidebar-foreground [&_[data-slot=sidebar-container]]:transition-none [&_[data-slot=sidebar-gap]]:transition-none"
       style={
         {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
+          '--header-height': '50px',
+          '--sidebar-width': 'calc(var(--spacing) * 64)',
+        } as CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-            </div>
+      <CpaSidebar
+        abbrBrandName={abbrBrandName}
+        currentPath={currentPath}
+        fullBrandName={fullBrandName}
+        matchesNavPath={matchesNavPath}
+        navSections={navSections}
+      />
+
+      <SidebarInset className="min-h-0 overflow-hidden bg-background">
+        <header
+          className="cpa-shell-header flex h-(--header-height) min-h-(--header-height) shrink-0 items-center justify-between gap-2 border-border/70 border-b bg-background"
+          ref={headerRef}
+        >
+          <div className="flex min-w-0 items-center gap-2 px-3 lg:px-4">
+            <SidebarTrigger className="-ml-1 size-8 shrink-0" />
+            <Separator className="mr-1.5 h-4 bg-border/70" orientation="vertical" />
+            <nav
+              className="flex min-w-0 items-center text-muted-foreground text-sm"
+              aria-label={t('common.navigation', { defaultValue: 'Navigation' })}
+            >
+              <span className="min-w-0 truncate font-medium text-foreground">
+                {currentRouteLabel}
+              </span>
+            </nav>
           </div>
+
+          <div className="navbar-right h-full px-3 lg:px-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefreshAll}
+              title={t('header.refresh_all')}
+              aria-label={t('header.refresh_all')}
+            >
+              {headerIcons.refresh}
+            </Button>
+
+            <div
+              className={`language-menu ${languageMenuOpen ? 'open' : ''}`}
+              ref={languageMenuRef}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleLanguageMenu}
+                title={t('language.switch')}
+                aria-label={t('language.switch')}
+                aria-haspopup="menu"
+                aria-expanded={languageMenuOpen}
+              >
+                {headerIcons.language}
+              </Button>
+              {languageMenuOpen && (
+                <div
+                  className="notification entering language-menu-popover"
+                  role="menu"
+                  aria-label={t('language.switch')}
+                >
+                  {LANGUAGE_ORDER.map((lang) => (
+                    <button
+                      key={lang}
+                      type="button"
+                      className={`language-menu-option ${language === lang ? 'active' : ''}`}
+                      onClick={() => handleLanguageSelect(lang)}
+                      role="menuitemradio"
+                      aria-checked={language === lang}
+                    >
+                      <span>{t(LANGUAGE_LABEL_KEYS[lang])}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={`theme-menu ${themeMenuOpen ? 'open' : ''}`} ref={themeMenuRef}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleThemeMenu}
+                title={t('theme.switch')}
+                aria-label={t('theme.switch')}
+                aria-haspopup="menu"
+                aria-expanded={themeMenuOpen}
+              >
+                {theme === 'auto'
+                  ? headerIcons.autoTheme
+                  : theme === 'dark'
+                    ? headerIcons.moon
+                    : headerIcons.sun}
+              </Button>
+              {themeMenuOpen && (
+                <div
+                  className="notification entering theme-menu-popover"
+                  role="menu"
+                  aria-label={t('theme.switch')}
+                >
+                  {THEME_OPTIONS.map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      className={`theme-option ${theme === option.key ? 'active' : ''}`}
+                      onClick={() => handleThemeSelect(option.key)}
+                      role="menuitemradio"
+                      aria-checked={theme === option.key}
+                      title={t(option.labelKey)}
+                      aria-label={t(option.labelKey)}
+                    >
+                      <span className="theme-option-icon">{option.icon}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              title={t('header.logout')}
+              aria-label={t('header.logout')}
+            >
+              {headerIcons.logout}
+            </Button>
+          </div>
+        </header>
+
+        <div
+          className={cn(
+            'cpa-shell-content',
+            'h-[calc(100svh-var(--header-height))] min-h-0 overflow-y-auto bg-background',
+            isLogsPage && 'overflow-hidden'
+          )}
+          ref={contentRef}
+        >
+          <main
+            className={cn(
+              'cpa-shell-main',
+              'flex min-h-full min-w-0 flex-col gap-(--app-gap) overflow-x-hidden bg-transparent p-(--app-gap)',
+              isLogsPage && 'h-full min-h-0 overflow-hidden'
+            )}
+          >
+            <PageTransition
+              render={(location) => <MainRoutes location={location} />}
+              getRouteOrder={getRouteOrder}
+              getTransitionVariant={getTransitionVariant}
+              scrollContainerRef={contentRef}
+            />
+          </main>
         </div>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+function CpaSidebar({
+  abbrBrandName,
+  currentPath,
+  fullBrandName,
+  matchesNavPath,
+  navSections,
+}: {
+  abbrBrandName: string;
+  currentPath: string;
+  fullBrandName: string;
+  matchesNavPath: (item: NavItem, pathname: string) => boolean;
+  navSections: NavSection[];
+}) {
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleNavigate = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
+  return (
+    <Sidebar className="cpa-coss-sidebar" collapsible="offcanvas" variant="inset">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              className="data-[slot=sidebar-menu-button]:p-1.5!"
+              size="lg"
+              tooltip={fullBrandName}
+            >
+              <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <img alt="" className="size-full object-cover" src={INLINE_LOGO_JPEG} />
+              </span>
+              <span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold text-base">{abbrBrandName}</span>
+                <span className="truncate text-muted-foreground text-xs">{fullBrandName}</span>
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>
+        {navSections.map((section) => (
+          <SidebarGroup key={section.label}>
+            <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.items.map((item) => {
+                  const isActive = matchesNavPath(item, currentPath);
+
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        render={
+                          <NavLink
+                            end={item.path === '/' || item.exact}
+                            onClick={handleNavigate}
+                            to={item.path}
+                          />
+                        }
+                        tooltip={item.label}
+                      >
+                        {item.icon}
+                        <span>{item.shortLabel ?? item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleNavigate} tooltip={fullBrandName}>
+              <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-sidebar-border bg-sidebar-accent">
+                <img alt="" className="size-full object-cover" src={INLINE_LOGO_JPEG} />
+              </span>
+              <span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{abbrBrandName}</span>
+                <span className="truncate text-muted-foreground text-xs">{fullBrandName}</span>
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+
+      <SidebarRail />
+    </Sidebar>
   );
 }
