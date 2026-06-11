@@ -12,6 +12,7 @@
 body {
   background-color: var(--app-bg);
   color: var(--text-primary);
+  position: relative;
   transition:
     background-color $transition-normal,
     color $transition-normal;
@@ -37,6 +38,7 @@ body.modal-open .cpa-shell-content {
   position: relative;
   z-index: 1;
   min-height: 100%;
+  font-family: var(--font-sans);
 }
 
 // 滚动条样式

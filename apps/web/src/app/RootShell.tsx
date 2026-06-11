@@ -7,7 +7,7 @@ export function RootShell() {
   return (
     <>
       <AppBackground />
-      <div className="app-content">
+      <div className="app-content isolate relative flex min-h-svh flex-col">
         <NotificationContainer />
         <ConfirmationModal />
         <Outlet />
